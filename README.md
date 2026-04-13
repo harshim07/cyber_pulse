@@ -79,7 +79,7 @@ npm start
 7. **Start Network Monitoring**
 ```bash
 # Run from the project root directory
-python network_sniffer.py
+python sniffer.py
 ```
 
 ## Usage
