@@ -1,1 +1,6 @@
-
+scikit-learn
+pandas
+scapy==2.5.0
+pymongo
+numpy
+joblib
