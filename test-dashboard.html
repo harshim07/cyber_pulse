@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #e6edf3;
+        }
+        .card {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #58a6ff;
+        }
+        .danger { color: #ff7b72; }
+        .normal { color: #7ee787; }
+        button {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2ea043; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #30363d;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #161b22;
+            font-weight: bold;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-danger { background: #ff7b72; color: white; }
+        .badge-medium { background: #ffa657; color: black; }
+        .badge-high { background: #f85149; color: white; }
+        .badge-critical { background: #d73a49; color: white; }
+        .badge-low { background: #7ee787; color: black; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ CyberPulse Dashboard Test</h1>
+    
+    <div class="stats" id="stats">
+        <div class="stat-card">
+            <h3>Total Packets</h3>
+            <div class="stat-value" id="totalPackets">Loading...</div>
+        </div>
+        <div class="stat-card">
+            <h3>Anomalies</h3>
+            <div class="stat-value danger" id="anomalies">Loading...</div>
+        </div>
+        <div class="stat-card">
+            <h3>Threat Mitigation</h3>
+            <div class="stat-value normal">100%</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📊 Dashboard Status</h3>
+        <p>This test page checks if your backend API is working and data is available.</p>
+        
+        <button onclick="fetchData()">🔄 Refresh Data</button>
+        <button onclick="testConnection()">🔧 Test Connection</button>
+        
+        <div id="status" style="margin-top: 20px;"></div>
+    </div>
+
+    <div class="card">
+        <h3>🚨 Recent Alerts</h3>
+        <div id="alerts">Loading alerts...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api/traffic';
+        
+        async function fetchData() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '🔄 Fetching data...';
+            
+            try {
+                const [statsRes, alertsRes] = await Promise.all([
+                    fetch(`${API_BASE}/stats`),
+                    fetch(`${API_BASE}/alerts`)
+                ]);
+                
+                const stats = await statsRes.json();
+                const alerts = await alertsRes.json();
+                
+                // Update stats
+                document.getElementById('totalPackets').textContent = stats.totalPackets.toLocaleString();
+                document.getElementById('anomalies').textContent = stats.anomalies.toLocaleString();
+                
+                // Update alerts table
+                const alertsDiv = document.getElementById('alerts');
+                if (alerts.length > 0) {
+                    alertsDiv.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Source IP</th>
+                                    <th>Destination IP</th>
+                                    <th>Classification</th>
+                                    <th>Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${alerts.slice(0, 10).map(alert => `
+                                    <tr>
+                                        <td>${new Date(alert.timestamp).toLocaleString()}</td>
+                                        <td>${alert.sourceIp}</td>
+                                        <td>${alert.destinationIp}</td>
+                                        <td>${alert.classification}</td>
+                                        <td><span class="badge badge-${alert.severity.toLowerCase()}">${alert.severity}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    alertsDiv.innerHTML = '✅ No recent alerts. Network is secure.';
+                }
+                
+                statusDiv.innerHTML = '✅ Data loaded successfully! Backend is working.';
+                statusDiv.style.color = '#7ee787';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+                statusDiv.style.color = '#ff7b72';
+            }
+        }
+        
+        async function testConnection() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '🔧 Testing connection...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                if (response.ok) {
+                    statusDiv.innerHTML = '✅ Connection successful! Server is running on port 5000.';
+                    statusDiv.style.color = '#7ee787';
+                } else {
+                    statusDiv.innerHTML = `❌ Server responded with status: ${response.status}`;
+                    statusDiv.style.color = '#ff7b72';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Cannot connect to server. Make sure the backend is running on port 5000.`;
+                statusDiv.style.color = '#ff7b72';
+            }
+        }
+        
+        // Auto-load data when page loads
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
